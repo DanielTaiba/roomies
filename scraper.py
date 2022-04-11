@@ -8,8 +8,85 @@ from utils import writeJsonFile,normalizeString
 class compartoDepto ():
     def __init__(self) -> None:
         self.driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()))
-        self.main_url = 'https://www.compartodepto.cl/'
+        self.main_url = 'https://www.compartodepto.cl'
         self.path_infoRooms = './infoRooms/'
+        self.path_generalStats = './generalStats/'
+        self.urls={
+            'CL':"https://www.compartodepto.cl",
+            'UK':"https://www.roomgo.co.uk",#united kingdom
+            'NZ':'https://www.roomgo.co.nz',#new zealand        
+            'IE':"https://ie.roomgo.net",#ireland
+            'US':"https://www.roomgo.net",#eeuu
+            'HK':"https://www.roomgo.com.hk",#Hong Kong
+            'CA':"https://ca.roomgo.net",#canada
+            'AU':"https://au.roomgo.net",#australia
+            'SG':"https://www.roomgo.com.sg",#singapure
+            'AR':"https://www.roomgo.com.ar",
+            'BE':"https://www.appartager.be",
+            'SZ':"https://www.roomgo.ch",#suiza
+            'FR':"https://www.appartager.com",#france
+            'IT':"https://www.roomgo.it",
+            #'VE':"https://www.compartoapto.com.ve",#venezuela deactivated
+            'BR':"https://www.roomgo.com.br",
+            'LU':"https://www.appartager.lu",#luxembourg
+            'CO':"https://www.compartoapto.com",#Colombia
+            'ES':"https://www.roomgo.es",
+            'MX':"https://www.roomgo.com.mx",
+            'PT':"https://www.roomgo.pt",#portugal
+     }
+    
+    def get_general_stats(self):
+        if not os.path.exists(self.path_generalStats):
+            os.makedirs(self.path_generalStats)
+
+        for countryCode,url in self.urls.items():
+            self.driver.get(url)
+            html = self.driver.execute_script('return document.documentElement.outerHTML')
+            data = self.parse_general_stats(html,countryCode)
+            writeJsonFile(data,fileName=self.path_generalStats+countryCode+'.json')
+        self.driver.quit()
+    
+    def parse_general_stats(self,html,countryCode):
+        soup = BeautifulSoup(html,'lxml')
+        titles = soup.find_all('div',attrs={'class':'hp_title'})
+        stats = soup.find_all('div',attrs={'class':'stats_box'})
+
+        try:
+            roomies = titles[-2].text.split(' ')[0]
+            roomies = int(roomies.replace(',',''))
+        except:
+            roomies = None
+
+        try:
+            rooms = titles[-1].text.split(' ')[0]
+            rooms = int(rooms.replace(',','')) 
+        except:
+            rooms=None
+        
+        list_stats=[]
+        for stat in stats:
+            try:
+                title=normalizeString(stats[0].find('div',attrs={'class':'stats_box_title'}).text)
+            except:
+                title=None
+
+            try:
+                names = stat.find_all('div',attrs={'class':'left'})
+                values = stat.find_all('div',attrs={'class':'right'})
+                contents = {normalizeString(names[i].text):normalizeString(values[i].text) for i in range(min(len(names),len(values)))}
+            except:
+                contents={}
+            list_stats.append({
+                'title':title,
+                'contents':contents
+            })
+        
+        return {
+            'pais':countryCode,
+            'roomies':roomies,
+            'rooms':rooms,
+            'stats':list_stats
+        }
 
     def get_info_rooms(self):
         if not os.path.exists(self.path_infoRooms):
@@ -133,8 +210,9 @@ class compartoDepto ():
 
 if __name__=='__main__':
     web = compartoDepto()
-    web.get_info_rooms()
+    #web.get_info_rooms()
     #web.get_info_rooms()
     #web.get_info_room()
     #web.read_html()
+    web.get_general_stats()
     pass
