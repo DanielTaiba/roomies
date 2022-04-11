@@ -168,36 +168,6 @@ class compartoDepto ():
             'features': features,
             'description':desc
         }
-    #### DEPRECATED ####
-    def get_room_endpoint(self,file_name = 'href_rooms.txt'):
-        with open(file_name,'r') as file:
-            while(True):
-                endpoint=file.readline()
-                if not endpoint:
-                    break
-                yield endpoint
-            
-    def _info_rooms(self):
-        count=0
-        for endpoint in self.get_room_endpoint(file_name='href_rooms.txt'):
-            self.driver.get(self.main_url+endpoint) 
-            html = self.driver.execute_script('return document.documentElement.outerHTML')
-        
-            path =  f'htmlRooms/room_{count}.html'
-            with open(path,'w') as file:
-                file.write(html)
-            count+=1
-        self.driver.quit()
-
-    def read_html(self,base_dir='./htmlRooms/'):
-        list_data = []
-        for page in os.listdir(base_dir):
-            
-            with open(base_dir+page) as html:
-                data = self.parse_info_rooms(html)
-            data['code']=page.split('.')[0]
-            data['url']=page
-            writeJsonFile(data=data,fileName='./infoRooms/'+data['code']+'.json')
 
     def get_contents(self,content):
         data =  {
@@ -211,8 +181,5 @@ class compartoDepto ():
 if __name__=='__main__':
     web = compartoDepto()
     #web.get_info_rooms()
-    #web.get_info_rooms()
-    #web.get_info_room()
-    #web.read_html()
     web.get_general_stats()
     pass
